@@ -36,6 +36,7 @@ impl Drop for Handler {
           target_os = "bitrig",
           target_os = "dragonfly",
           target_os = "freebsd",
+          target_os = "sunos",
           all(target_os = "netbsd", not(target_vendor = "rumprun")),
           target_os = "openbsd"))]
 mod imp {
@@ -163,6 +164,7 @@ mod imp {
               target_os = "bitrig",
               target_os = "dragonfly",
               target_os = "freebsd",
+              target_os = "sunos",
               all(target_os = "netbsd", not(target_vendor = "rumprun")),
               target_os = "openbsd")))]
 mod imp {

@@ -83,6 +83,9 @@ ifeq ($(UNAME),Bitrig)
 	EXTRACFLAGS := -lm -lpthread
 	EXTRACXXFLAGS := -lc++ -lc++abi
 else
+ifeq ($(UNAME),SunOS)
+	EXTRACFLAGS := -lm -lpthread -lposix4 -lsocket
+else
 ifeq ($(UNAME),OpenBSD)
 	EXTRACFLAGS := -lm -lpthread
 	# extend search lib for found estdc++ if build using gcc from
@@ -93,6 +96,7 @@ ifeq ($(UNAME),OpenBSD)
 else
 	EXTRACFLAGS := -lm -lrt -ldl -lpthread
 	EXTRACXXFLAGS := -lstdc++
+endif
 endif
 endif
 endif
