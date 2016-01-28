@@ -44,7 +44,7 @@ extern {}
 #[link(name = "pthread")]
 extern {}
 
-#[cfg(target_os = "sunos")]
+#[cfg(target_os = "solaris")]
 #[link(name = "socket")]
 #[link(name = "posix4")]
 #[link(name = "pthread")]

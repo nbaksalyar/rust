@@ -24,9 +24,9 @@ use sys::platform::raw;
 use sys::{cvt, cvt_r};
 use sys_common::{AsInner, FromInner};
 use vec::Vec;
-#[cfg(target_os = "sunos")]
+#[cfg(target_os = "solaris")]
 use core_collections::borrow::ToOwned;
-#[cfg(target_os = "sunos")]
+#[cfg(target_os = "solaris")]
 use boxed::Box;
 
 pub struct File(FileDesc);
@@ -53,7 +53,7 @@ pub struct DirEntry {
     // on Solaris because a) it uses a zero-length array to
     // store the name, b) its lifetime between readdir calls
     // is not guaranteed.
-    #[cfg(target_os = "sunos")]
+    #[cfg(target_os = "solaris")]
     name: Box<[u8]>
 }
 
@@ -135,7 +135,7 @@ impl FromInner<raw::mode_t> for FilePermissions {
 impl Iterator for ReadDir {
     type Item = io::Result<DirEntry>;
 
-    #[cfg(target_os = "sunos")]
+    #[cfg(target_os = "solaris")]
     fn next(&mut self) -> Option<io::Result<DirEntry>> {
         unsafe {
             loop {
@@ -164,7 +164,7 @@ impl Iterator for ReadDir {
         }
     }
 
-    #[cfg(not(target_os = "sunos"))]
+    #[cfg(not(target_os = "solaris"))]
     fn next(&mut self) -> Option<io::Result<DirEntry>> {
         extern {
             fn rust_dirent_t_size() -> c_int;
@@ -255,7 +255,7 @@ impl DirEntry {
     fn dirent(&self) -> *mut libc::dirent {
         self.buf.as_ptr() as *mut _
     }
-    #[cfg(target_os = "sunos")]
+    #[cfg(target_os = "solaris")]
     fn name_bytes(&self) -> &[u8] {
         &*self.name
     }
