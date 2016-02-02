@@ -24,7 +24,6 @@ use sys::fd::FileDesc;
 use sys::platform::raw;
 use sys::{cvt, cvt_r};
 use sys_common::{AsInner, FromInner};
-use vec::Vec;
 
 pub struct File(FileDesc);
 
