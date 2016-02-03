@@ -133,6 +133,9 @@ impl Iterator for ReadDir {
 
     #[cfg(target_os = "solaris")]
     fn next(&mut self) -> Option<io::Result<DirEntry>> {
+        let mut buf: Vec<u8> = Vec::with_capacity(9);
+        let ptr = buf.as_mut_ptr() as *mut libc::dirent;
+
         unsafe {
             loop {
                 // Although readdir_r(3) would be a correct function to use here because
@@ -144,17 +147,22 @@ impl Iterator for ReadDir {
                     return None
                 }
 
+                buf.set_len(9);
+                ptr::copy(entry_ptr, ptr, 9);
+
                 let name = (*entry_ptr).d_name.as_ptr();
                 let namelen = libc::strlen(name) as usize;
 
                 let ret = DirEntry {
-                    entry: *entry_ptr,
+                    buf: buf,
+                    root: self.root.clone(),
                     name: ::slice::from_raw_parts(name as *const u8,
-                                                  namelen as usize).to_owned().into_boxed_slice(),
-                    root: self.root.clone()
+                                                  namelen as usize).to_owned().into_boxed_slice()
                 };
                 if ret.name_bytes() != b"." && ret.name_bytes() != b".." {
                     return Some(Ok(ret))
+                } else {
+                    buf = ret.buf;
                 }
             }
         }
@@ -213,12 +221,12 @@ impl DirEntry {
         lstat(&self.path())
     }
 
-    #[cfg(target_os = "sunos")]
+    #[cfg(target_os = "solaris")]
     pub fn file_type(&self) -> io::Result<FileType> {
         stat(&self.path()).map(|m| m.file_type())
     }
 
-    #[cfg(not(target_os = "sunos"))]
+    #[cfg(not(target_os = "solaris"))]
     pub fn file_type(&self) -> io::Result<FileType> {
         extern {
             fn rust_dir_get_mode(ptr: *mut libc::dirent) -> c_int;
@@ -241,7 +249,7 @@ impl DirEntry {
     #[cfg(not(target_os = "solaris"))]
     fn name_bytes(&self) -> &[u8] {
         extern {
-            fn rust_list_dir_val(ptr: *mut libc::dirent) -> *const c_char;
+            fn rust_list_dir_val(ptr: *mut libc::dirent) -> *const libc::c_char;
         }
         unsafe {
             CStr::from_ptr(rust_list_dir_val(self.dirent())).to_bytes()
@@ -251,6 +259,7 @@ impl DirEntry {
     fn dirent(&self) -> *mut libc::dirent {
         self.buf.as_ptr() as *mut _
     }
+
     #[cfg(target_os = "solaris")]
     fn name_bytes(&self) -> &[u8] {
         &*self.name

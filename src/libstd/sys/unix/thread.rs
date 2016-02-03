@@ -192,10 +192,12 @@ pub mod guard {
 pub mod guard {
     use prelude::v1::*;
 
-    use libc::{self, pthread_t};
+    use libc;
     use libc::mmap;
     use libc::{PROT_NONE, MAP_PRIVATE, MAP_ANON, MAP_FAILED, MAP_FIXED};
+    #[cfg(not(target_os = "solaris"))]
     use mem;
+    #[cfg(not(target_os = "solaris"))]
     use ptr;
     use sys::os;
 
