@@ -560,7 +560,7 @@ pub fn home_dir() -> Option<PathBuf> {
             // getpwuid_r semantics is different on Illumos/Solaris:
             // http://illumos.org/man/3c/getpwuid_r
             let result = libc::getpwuid_r(me, passwd, buf.as_mut_ptr(),
-                                          buf.capacity() as libc::size_t);
+                                          buf.capacity() as i32);
             if result.is_null() { None } else { Some(()) }
         }
 

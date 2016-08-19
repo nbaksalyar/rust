@@ -269,6 +269,11 @@ endif
 COMPRT_DEFINES_$(1) := -DCOMPILER_RT_ENABLE_IOS=ON
 endif
 
+ifeq ($$(findstring sun,$(1)),sun)
+COMPRT_DIR_$(1) := sunos
+COMPRT_LIB_NAME_$(1) := clang_rt.builtins-$$(patsubst i686,i386,$$(COMPRT_ARCH_$(1)))
+endif
+
 ifndef COMPRT_DIR_$(1)
 # NB: FreeBSD and NetBSD output to "linux"...
 COMPRT_DIR_$(1) := linux

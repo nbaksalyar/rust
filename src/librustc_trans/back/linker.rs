@@ -235,7 +235,11 @@ impl<'a> Linker for GnuLinker<'a> {
         self.cmd.arg("-Wl,-Bdynamic");
     }
 
-    fn export_symbols(&mut self, tmpdir: &Path, crate_type: CrateType) {
+    fn export_symbols(&mut self,
+                      sess: &Session,
+                      trans: &CrateTranslation,
+                      tmpdir: &Path,
+                      crate_type: CrateType) {
         // If we're compiling a dylib, then we let symbol visibility in object
         // files to take care of whether they're exported or not.
         //
@@ -247,29 +251,49 @@ impl<'a> Linker for GnuLinker<'a> {
             return
         }
 
-        let path = tmpdir.join("list");
-        let prefix = if self.sess.target.target.options.is_like_osx {
-            "_"
-        } else {
-            ""
-        };
-        let res = (|| -> io::Result<()> {
-            let mut f = BufWriter::new(File::create(&path)?);
-            for sym in &self.info.cdylib_exports {
-                writeln!(f, "{}{}", prefix, sym)?;
-            }
-            Ok(())
-        })();
-        if let Err(e) = res {
-            self.sess.fatal(&format!("failed to write lib.def file: {}", e));
-        }
         let mut arg = OsString::new();
-        if self.sess.target.target.options.is_like_osx {
-            arg.push("-Wl,-exported_symbols_list,");
+        let path = tmpdir.join("list");
+
+        if self.sess.target.target.options.is_like_solaris {
+            let res = (|| -> io::Result<()> {
+                let mut f = BufWriter::new(File::create(&path)?);
+                writeln!(f, "{{\n  global:")?;
+                for sym in exported_symbols(sess, trans, crate_type) {
+                    writeln!(f, "    {};", sym)?;
+                }
+                writeln!(f, "\n  local:\n    *;\n}};")?;
+                Ok(())
+            })();
+            if let Err(e) = res {
+                sess.fatal(&format!("failed to write version script: {}", e));
+            }
+
+            arg.push("-Wl,-M,");
+            arg.push(&path);
         } else {
-            arg.push("-Wl,--retain-symbols-file=");
+            let prefix = if self.sess.target.target.options.is_like_osx {
+                "_"
+            } else {
+                ""
+            };
+            let res = (|| -> io::Result<()> {
+                let mut f = BufWriter::new(File::create(&path)?);
+                for sym in exported_symbols(sess, trans, crate_type) {
+                    writeln!(f, "{}{}", prefix, sym)?;
+                }
+                Ok(())
+            })();
+            if let Err(e) = res {
+                sess.fatal(&format!("failed to write lib.def file: {}", e));
+            }
+            if self.sess.target.target.options.is_like_osx {
+                arg.push("-Wl,-exported_symbols_list,");
+            } else {
+                arg.push("-Wl,--retain-symbols-file=");
+            }
+            arg.push(&path);
         }
-        arg.push(&path);
+
         self.cmd.arg(arg);
     }
 }
